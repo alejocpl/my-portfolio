@@ -1,0 +1,1 @@
+Coloca aquí las imágenes de cada proyecto: assets/img/projects/<id-del-proyecto>/cover.jpg

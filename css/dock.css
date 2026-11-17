@@ -1,0 +1,153 @@
+/* =================================================================
+   DOCK.CSS
+   Menú flotante fijo en la parte inferior de la pantalla.
+   - Desktop: icono + texto
+   - Mobile : icono + etiqueta pequeña debajo
+   - .is-active   → sección visible (scrollspy en js/modules/dock.js)
+   - .dock__panel → submenú de categorías de trabajos
+   ================================================================= */
+
+.dock {
+  position: fixed;
+  left: 50%;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 100;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 20px);
+  transition: transform var(--dur) var(--ease-out), opacity var(--dur);
+}
+/* Oculto al inicio hasta que el usuario hace scroll (lo controla JS) */
+.dock.is-hidden { transform: translate(-50%, 140%); opacity: 0; }
+
+.dock__list {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  border-radius: var(--r-pill);
+  background: var(--c-glass);
+  border: 1px solid var(--c-border-2);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow: var(--shadow-lg);
+}
+
+.dock__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 52px;
+  padding: 0 16px;
+  border-radius: var(--r-pill);
+  color: var(--c-text-dim);
+  font-family: var(--ff-display);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  transition: color var(--dur-fast), background var(--dur-fast);
+}
+.dock__item .icon { width: 20px; height: 20px; }
+.dock__item:hover { color: var(--c-text); background: var(--c-tint-hover); }
+.dock__item.is-active { color: var(--c-text); background: var(--c-tint-hover); }
+.dock__item.is-active::after {
+  content: "";
+  position: absolute;
+  bottom: 6px; left: 50%;
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--c-accent-2);
+  transform: translateX(-50%);
+}
+
+.dock__item--cta {
+  color: #fff;
+  background: var(--grad-btn);
+  background-size: 200% 100%;
+  transition: background-position var(--dur);
+}
+.dock__item--cta:hover,
+.dock__item--cta.is-active { color: #fff; background: var(--grad-btn); background-position: 100% 0; }
+.dock__item--cta.is-active::after { background: #fff; }
+
+.dock__sep { width: 1px; height: 28px; background: var(--c-border-2); margin-inline: 4px; }
+
+/* Botón que abre el submenú de categorías */
+.dock__has-panel { display: flex; align-items: center; }
+.dock__toggle {
+  display: grid; place-items: center;
+  width: 30px; height: 52px;
+  margin-left: -6px;
+  border-radius: var(--r-pill);
+  color: var(--c-text-mute);
+  transition: color var(--dur-fast), background var(--dur-fast);
+}
+.dock__toggle .icon { width: 16px; height: 16px; transition: transform var(--dur) var(--ease-out); }
+.dock__toggle:hover { color: var(--c-text); background: var(--c-tint-hover); }
+.dock__toggle[aria-expanded="true"] { color: var(--c-accent-2); }
+.dock__toggle[aria-expanded="true"] .icon { transform: rotate(180deg); }
+
+/* ---------- Submenú (panel de categorías) ---------- */
+.dock__panel {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 12px);
+  width: min(560px, calc(100vw - 20px));
+  padding: var(--sp-5);
+  border-radius: var(--r-lg);
+  background: var(--c-glass-strong);
+  border: 1px solid var(--c-border-2);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: var(--shadow-lg);
+  transform: translateX(-50%);
+  animation: dockPanelIn var(--dur) var(--ease-out);
+}
+.dock__panel[hidden] { display: none; }
+.dock__panel-title {
+  margin-bottom: var(--sp-3);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--c-text-mute);
+}
+.dock__panel-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.dock__panel-btn {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  color: var(--c-text-dim);
+  text-align: left;
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+.dock__panel-btn .icon { color: var(--c-accent-2); }
+.dock__panel-btn:hover,
+.dock__panel-btn:focus-visible { background: var(--c-tint-hover); color: var(--c-text); }
+.dock__panel-btn small { margin-left: auto; color: var(--c-text-mute); font-size: 11px; }
+
+@keyframes dockPanelIn {
+  from { opacity: 0; transform: translate(-50%, 10px) scale(0.98); }
+  to   { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 760px) {
+  .dock__list { gap: 0; padding: 5px; }
+  .dock__item {
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    height: 54px;
+    padding: 0 10px;
+    font-size: 10px;
+  }
+  .dock__item.is-active::after { display: none; }
+  .dock__sep { display: none; }
+  .dock__toggle { width: 22px; margin-left: -4px; }
+  .dock__panel-list { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 400px) {
+  .dock__item { padding: 0 7px; }
+  .dock__label { font-size: 9px; }
+}

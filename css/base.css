@@ -1,0 +1,208 @@
+/* =================================================================
+   BASE.CSS
+   Design tokens (variables), reset y tipografía.
+   👉 Para cambiar la identidad visual, edita SOLO las variables :root
+   ================================================================= */
+
+:root {
+  /* ---------- Color (Modo Oscuro — por defecto) ---------- */
+  /* Principal: #151821 | Secundario: #155DF2 | Terciario: #FFFFFF */
+  --c-bg:          #151821;
+  --c-bg-2:        #1b1f2c;
+  --c-surface:     #202534;
+  --c-surface-2:   #282f42;
+  --c-glass:       rgba(21, 24, 33, 0.8);
+  --c-glass-strong:rgba(21, 24, 33, 0.92);
+  --c-border:      rgba(255, 255, 255, 0.08);
+  --c-border-2:    rgba(255, 255, 255, 0.16);
+  --c-text:        #ffffff;
+  --c-text-dim:    #a8b3cf;
+  --c-text-mute:   #6d7894;
+  --c-tint:        rgba(255, 255, 255, 0.03);
+  --c-tint-hover:  rgba(255, 255, 255, 0.06);
+
+  --c-accent-1:    #155df2;   /* secundario principal (azul) */
+  --c-accent-2:    #4d88ff;   /* variante clara de #155DF2 para legibilidad sobre #151821 */
+  --c-accent-3:    #ffffff;   /* terciario (blanco) */
+  --c-success:     #3ddc97;
+  --c-danger:      #ff5c6c;
+
+  --grad-main: linear-gradient(120deg, #155df2 0%, #3b7bff 60%, #ffffff 130%);
+  --grad-btn:  linear-gradient(120deg, #155df2 0%, #2f72ff 50%, #0f49c7 100%);
+
+  /* ---------- Tipografía ---------- */
+  --ff-display: "Space Grotesk", system-ui, sans-serif;
+  --ff-body:    "Inter", system-ui, sans-serif;
+
+  --fs-xs:   0.8rem;
+  --fs-sm:   0.9rem;
+  --fs-base: 1rem;
+  --fs-md:   1.125rem;
+  --fs-lg:   clamp(1.25rem, 1rem + 1vw, 1.6rem);
+  --fs-xl:   clamp(2rem, 1.4rem + 2.6vw, 3.4rem);
+  --fs-2xl:  clamp(2.6rem, 1.6rem + 4.6vw, 5.6rem);
+
+  /* ---------- Espaciado ---------- */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.5rem;
+  --sp-6: 2rem;
+  --sp-7: 3rem;
+  --sp-8: 4rem;
+  --sp-9: 6rem;
+  --section-y: clamp(2.5rem, 2rem + 3vw, 4.25rem);
+
+  /* ---------- Forma ---------- */
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 22px;
+  --r-xl: 32px;
+  --r-pill: 999px;
+
+  --shadow-lg: 0 30px 80px -20px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 0 1px var(--c-border-2), 0 20px 60px -15px rgba(7, 43, 115, 0.45);
+
+  /* ---------- Layout ---------- */
+  --container: 1240px;
+  --container-narrow: 820px;
+  --dock-h: 72px;           /* alto del dock (para dejar espacio abajo) */
+
+  /* ---------- Motion ---------- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 0.2s;
+  --dur: 0.45s;
+  --dur-slow: 0.9s;
+
+  color-scheme: dark;
+}
+
+/* ---------- Modo Claro (Light Mode) ----------
+   Invierte el rol: fondo blanco (#FFFFFF), textos #151821 y acento #155DF2 */
+[data-theme="light"] {
+  --c-bg:          #ffffff;
+  --c-bg-2:        #f4f6fb;
+  --c-surface:     #eef2f9;
+  --c-surface-2:   #e3e9f4;
+  --c-glass:       rgba(255, 255, 255, 0.85);
+  --c-glass-strong:rgba(255, 255, 255, 0.96);
+  --c-border:      rgba(21, 24, 33, 0.09);
+  --c-border-2:    rgba(21, 24, 33, 0.18);
+  --c-text:        #151821;
+  --c-text-dim:    #454f68;
+  --c-text-mute:   #6d7894;
+  --c-tint:        rgba(21, 24, 33, 0.03);
+  --c-tint-hover:  rgba(21, 24, 33, 0.07);
+
+  --c-accent-1:    #155df2;
+  --c-accent-2:    #155df2;
+  --c-accent-3:    #151821;
+  --c-success:     #159e63;
+  --c-danger:      #dc2626;
+
+  --grad-main: linear-gradient(120deg, #155df2 0%, #0d3ea8 75%, #151821 130%);
+  --shadow-lg: 0 24px 60px -20px rgba(21, 24, 33, 0.16);
+  --shadow-glow: 0 0 0 1px var(--c-border-2), 0 20px 60px -15px rgba(21, 93, 242, 0.25);
+
+  color-scheme: light;
+}
+
+/* ---------- Reset moderno ---------- */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+* { margin: 0; padding: 0; }
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: 80px;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--c-bg);
+  color: var(--c-text);
+  font-family: var(--ff-body);
+  font-size: var(--fs-base);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  padding-bottom: calc(var(--dock-h) + 2rem); /* espacio para el dock */
+  transition: background-color var(--dur-fast), color var(--dur-fast);
+}
+
+img, video, svg, iframe { display: block; max-width: 100%; }
+img, video { height: auto; object-fit: cover; }
+input, button, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; background: none; border: 0; }
+a { color: inherit; text-decoration: none; }
+ul, ol { list-style: none; }
+h1, h2, h3, h4 {
+  font-family: var(--ff-display);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+  text-wrap: balance;
+}
+p { text-wrap: pretty; }
+
+::selection { background: var(--c-accent-1); color: #fff; }
+
+:focus-visible {
+  outline: 2px solid var(--c-accent-2);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* ---------- Utilidades ---------- */
+.icon {
+  width: 1.15em;
+  height: 1.15em;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.gradient-text {
+  background: var(--grad-main);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.skip-link {
+  position: fixed;
+  top: -100px; left: 1rem;
+  z-index: 999;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--c-accent-1);
+  border-radius: var(--r-sm);
+}
+.skip-link:focus { top: 1rem; }
+
+/* Honeypot anti-spam */
+.hp { position: absolute; left: -9999px; opacity: 0; pointer-events: none; }
+
+/* Accesibilidad: respetar usuarios que prefieren menos movimiento */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
