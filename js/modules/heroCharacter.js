@@ -1,37 +1,30 @@
 /* =================================================================
    MODULES / HEROCHARACTER.JS
-   Cabeza 3D interactiva de pequeño oso caricaturesco (peluche digital)
-   para el contenedor #heroCharacter.
+   Núcleo Tecnológico 3D con Anillos Giroscópicos para #heroCharacter.
 
-   Características visuales (fiel a las referencias frontal y lateral):
-     - Cabeza ovalada ensanchada horizontalmente, mejillas llenas, base
-       suavemente aplanada, color naranja intenso y cálido con sombreado satinado.
-     - Dos orejas grandes en forma de triángulos redondeados con borde
-       exterior grueso naranja y cavidad interior crema ligeramente hundida.
-     - Hocico ovalado ancho de color crema claro, voluminoso y sobresaliente
-       en la zona central-inferior del rostro.
-     - Dos ojos ovalados verticales de color negro muy oscuro y acabado
-       satinado/brillante (sin iris ni pestañas), que siguen al cursor.
-     - Nariz ovalada/triangular redondeada marrón chocolate brillante en
-       la parte superior del hocico.
-     - Boca minimalista en forma de Y invertida (línea vertical + dos
-       diagonales cortas) que cambia a sonrisa al hacer clic.
+   Características visuales e interactivas:
+     - Núcleo central geométrico facetado (acabado metálico oscuro titanio)
+       con núcleo energético interior emisivo y jaula wireframe sutil (#155DF2)
+       con nodos de vértice iluminados.
+     - 3 anillos orbitales giroscópicos concéntricos con marcadores técnicos
+       y partículas orbitales flotantes.
+     - Seguimiento del cursor: el núcleo apunta hacia el mouse con suavizado
+       LERP y los anillos responden con efecto paralaje diferencial.
+     - Interacción al clic: lanza una onda/pulso de energía expansivo,
+       intensifica el brillo del núcleo y acelera el giro giroscópico.
    ================================================================= */
 window.AC = window.AC || {};
 
 AC.heroCharacter = (function () {
   const { $, prefersReducedMotion } = AC.utils;
 
-  /* ── Constantes de configuración del personaje ── */
+  /* ── Constantes de configuración ── */
   const CONFIG = {
-    inactivityMs: 10000,       // 10 s sin actividad para empezar a dormirse
-    happyDurationMs: 840,      // duración de la animación de felicidad al clic (600-1000ms)
-    eyeLerp: 0.16,             // suavizado de seguimiento (LERP)
-    eyeMaxOffsetX: 0.095,      // desplazamiento máximo horizontal de los ojos (unidades 3D)
-    eyeMaxOffsetY: 0.075,      // desplazamiento máximo vertical de los ojos (unidades 3D)
-    blinkIntervalMin: 2800,    // intervalo mínimo entre parpadeos naturales (ms)
-    blinkIntervalMax: 5800,    // intervalo máximo entre parpadeos naturales (ms)
-    blinkDuration: 165,        // duración de un parpadeo (ms)
+    inactivityMs: 10000,       // 10 s sin actividad para pasar a crucero suave (standby)
+    pulseDurationMs: 1050,     // duración del pulso energético y giro rápido al hacer clic
+    trackLerp: 0.11,           // suavizado de seguimiento hacia el cursor
+    coreMaxRotX: 0.55,         // inclinación vertical máxima del núcleo hacia el cursor (rad)
+    coreMaxRotY: 0.72,         // rotación horizontal máxima del núcleo hacia el cursor (rad)
   };
 
   /* ── Utilidades matemáticas locales ── */
@@ -53,14 +46,12 @@ AC.heroCharacter = (function () {
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(32, width / height, 0.1, 50);
 
-      // Ajusta la distancia de la cámara según la proporción del contenedor
-      // para garantizar que ni las mejillas ni las orejas se recorten nunca
       function updateCameraFraming(w, h) {
         const aspect = w / h;
         camera.aspect = aspect;
-        const baseZ = 5.45;
-        camera.position.set(0, 0.06, aspect < 1 ? baseZ / Math.max(aspect, 0.65) : baseZ);
-        camera.lookAt(0, 0.04, 0);
+        const baseZ = 6.0;
+        camera.position.set(0, 0.04, aspect < 1 ? baseZ / Math.max(aspect, 0.68) : baseZ);
+        camera.lookAt(0, 0, 0);
         camera.updateProjectionMatrix();
       }
       updateCameraFraming(width, height);
@@ -75,304 +66,267 @@ AC.heroCharacter = (function () {
       renderer.setClearColor(0x000000, 0);
       container.appendChild(renderer.domElement);
 
-      /* ---------- Iluminación cálida para variaciones tonales naranjas ---------- */
-      // Luz hemisférica: cálida clara arriba -> tono tostado más oscuro abajo
-      const hemiLight = new THREE.HemisphereLight(0xfff6eb, 0x8a3b12, 0.92);
+      /* ---------- Iluminación técnica (azul eléctrico + reflejos fríos) ---------- */
+      const hemiLight = new THREE.HemisphereLight(0xdbe8ff, 0x0b1020, 0.85);
       hemiLight.position.set(0, 4, 2);
       scene.add(hemiLight);
 
-      // Luz principal frontal-superior para resaltar frente, hocico y brillo de nariz/ojos
-      const keyLight = new THREE.DirectionalLight(0xfffbf4, 0.72);
-      keyLight.position.set(-1.6, 3.2, 4.6);
+      const keyLight = new THREE.DirectionalLight(0xffffff, 0.95);
+      keyLight.position.set(-2.4, 3.6, 4.8);
       scene.add(keyLight);
 
-      // Luz de relleno suave derecha
-      const fillLight = new THREE.DirectionalLight(0xffdfc2, 0.32);
-      fillLight.position.set(2.8, -0.8, 2.8);
-      scene.add(fillLight);
+      const rimLight = new THREE.DirectionalLight(0x155df2, 1.35);
+      rimLight.position.set(3.4, -1.6, 2.5);
+      scene.add(rimLight);
 
-      /* ---------- Sombra suave debajo de la cabeza ---------- */
+      const corePointLight = new THREE.PointLight(0x4d88ff, 1.2, 6);
+      corePointLight.position.set(0, 0, 0.5);
+      scene.add(corePointLight);
+
+      /* ---------- Resplandor / sombra tecnológica inferior ---------- */
       const shadowCanvas = document.createElement("canvas");
       shadowCanvas.width = 128;
       shadowCanvas.height = 128;
       const sctx = shadowCanvas.getContext("2d");
-      const grad = sctx.createRadialGradient(64, 64, 8, 64, 64, 60);
-      grad.addColorStop(0, "rgba(15, 10, 25, 0.42)");
-      grad.addColorStop(0.55, "rgba(15, 10, 25, 0.15)");
-      grad.addColorStop(1, "rgba(15, 10, 25, 0)");
+      const grad = sctx.createRadialGradient(64, 64, 6, 64, 64, 60);
+      grad.addColorStop(0, "rgba(21, 93, 242, 0.32)");
+      grad.addColorStop(0.5, "rgba(15, 23, 42, 0.16)");
+      grad.addColorStop(1, "rgba(15, 23, 42, 0)");
       sctx.fillStyle = grad;
       sctx.fillRect(0, 0, 128, 128);
 
       const shadowTex = new THREE.CanvasTexture(shadowCanvas);
       const shadowMesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(2.6, 2.0),
+        new THREE.PlaneGeometry(2.8, 2.2),
         new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false })
       );
       shadowMesh.rotation.x = -Math.PI / 2;
-      shadowMesh.position.set(0, -1.02, 0);
+      shadowMesh.position.set(0, -1.56, 0);
       scene.add(shadowMesh);
 
-      /* ---------- Materiales satinados de juguete/peluche digital ---------- */
-      const orangeMat = new THREE.MeshStandardMaterial({
-        color: 0xf4812a, // naranja intenso y cálido
-        roughness: 0.52,
-        metalness: 0.02,
+      /* ---------- Materiales ---------- */
+      // Núcleo metálico oscuro facetado (grafito / titanio)
+      const darkMetalMat = new THREE.MeshStandardMaterial({
+        color: 0x161c2a,
+        roughness: 0.26,
+        metalness: 0.84,
+        flatShading: true,
+        emissive: 0x08132c,
+        emissiveIntensity: 0.35,
       });
 
-      const creamMat = new THREE.MeshStandardMaterial({
-        color: 0xf7dec1, // crema claro / beige cálido
-        roughness: 0.56,
-        metalness: 0.01,
+      // Núcleo interior de energía (#155DF2 -> #4D88FF)
+      const innerEnergyMat = new THREE.MeshStandardMaterial({
+        color: 0x155df2,
+        emissive: 0x2c74ff,
+        emissiveIntensity: 0.9,
+        roughness: 0.18,
+        metalness: 0.1,
+        flatShading: true,
       });
 
-      const earInnerMat = new THREE.MeshStandardMaterial({
-        color: 0xf3d4b0, // crema interior de la oreja con sombreado suave
-        roughness: 0.62,
-        metalness: 0.01,
+      // Malla wireframe sutil alrededor del núcleo (#155DF2 / #4D88FF)
+      const wireframeMat = new THREE.LineBasicMaterial({
+        color: 0x4d88ff,
+        transparent: true,
+        opacity: 0.62,
       });
 
-      const eyeMat = new THREE.MeshStandardMaterial({
-        color: 0x1c1c21, // negro carbón muy oscuro con acabado satinado brillante
+      // Nodos luminosos en vértices y órbitas
+      const nodeMat = new THREE.MeshBasicMaterial({
+        color: 0x76a9ff,
+      });
+
+      // Anillo metálico estructural
+      const ringMetalMat = new THREE.MeshStandardMaterial({
+        color: 0x242e44,
         roughness: 0.22,
-        metalness: 0.06,
+        metalness: 0.88,
+        emissive: 0x0b1d48,
+        emissiveIntensity: 0.25,
       });
 
-      const noseMat = new THREE.MeshStandardMaterial({
-        color: 0x4b2818, // marrón chocolate oscuro brillante
-        roughness: 0.24,
-        metalness: 0.05,
+      // Anillos de acento azul (#155DF2)
+      const ringAccentMat = new THREE.MeshStandardMaterial({
+        color: 0x155df2,
+        emissive: 0x1f6bff,
+        emissiveIntensity: 0.65,
+        roughness: 0.25,
+        metalness: 0.55,
       });
 
-      const mouthMat = new THREE.MeshBasicMaterial({
-        color: 0x3b2219, // marrón muy oscuro para la línea en Y invertida
+      // Anillo exterior fino
+      const ringOuterMat = new THREE.MeshBasicMaterial({
+        color: 0x4d88ff,
+        transparent: true,
+        opacity: 0.52,
       });
 
-      /* ---------- Grupo raíz ---------- */
+      // Onda expansiva para el pulso al hacer clic
+      const pulseWaveMat = new THREE.MeshBasicMaterial({
+        color: 0x6ea4ff,
+        transparent: true,
+        opacity: 0,
+        side: THREE.DoubleSide,
+      });
+
+      /* ---------- Grupos de escena ---------- */
       const root = new THREE.Group();
       scene.add(root);
 
-      const bodyGroup = new THREE.Group();
-      root.add(bodyGroup);
+      const coreGroup = new THREE.Group();
+      root.add(coreGroup);
 
-      /* ---------- 1. CABEZA NARANJA ----------
-         Forma circular ligeramente ovalada y ensanchada horizontalmente,
-         mejillas redondeadas y parte inferior suavemente aplanada. */
-      const headGeo = new THREE.SphereGeometry(1.0, 64, 64);
-      const hPos = headGeo.attributes.position;
-      const v = new THREE.Vector3();
+      const ringsGroup = new THREE.Group();
+      root.add(ringsGroup);
 
-      for (let i = 0; i < hPos.count; i++) {
-        v.fromBufferAttribute(hPos, i);
-        const y = v.y;
+      /* ---------- 1. NÚCLEO GEOMÉTRICO FACETADO ---------- */
+      // 1a. Esfera/Icosaedro energético interno
+      const innerGeo = new THREE.IcosahedronGeometry(0.42, 1);
+      const innerMesh = new THREE.Mesh(innerGeo, innerEnergyMat);
+      coreGroup.add(innerMesh);
 
-        // Ensanchamiento horizontal general
-        v.x *= 1.18;
-        // Volumen anteroposterior compacto pero redondeado (como en la vista lateral)
-        v.z *= 0.96;
+      // 1b. Coraza metálica oscura facetada
+      const shellGeo = new THREE.IcosahedronGeometry(0.67, 1);
+      const shellMesh = new THREE.Mesh(shellGeo, darkMetalMat);
+      coreGroup.add(shellMesh);
 
-        if (y < 0) {
-          // Mejillas anchas y redondeadas en la mitad inferior
-          const cheekBulge = Math.sin(clamp(-y, 0, 1) * Math.PI * 0.88);
-          v.x *= 1 + 0.11 * cheekBulge;
-          v.z *= 1 + 0.04 * cheekBulge;
+      // 1c. Jaula wireframe sutil en #155DF2 + nodos en los vértices
+      const cageGeo = new THREE.IcosahedronGeometry(0.75, 1);
+      const cageEdges = new THREE.EdgesGeometry(cageGeo);
+      const wireframeMesh = new THREE.LineSegments(cageEdges, wireframeMat);
+      coreGroup.add(wireframeMesh);
 
-          // Base inferior suavemente aplanada
-          if (y < -0.52) {
-            v.y = -0.52 + (y + 0.52) * 0.36;
-          }
-        } else {
-          // Domo superior redondeado y compacto
-          v.y *= 0.88;
-          v.x *= 1 - 0.04 * y * y;
+      // Pequeños nodos en los vértices únicos de la jaula wireframe
+      const vertexNodesGroup = new THREE.Group();
+      const posAttr = cageGeo.attributes.position;
+      const seenVertices = new Set();
+      const nodeGeo = new THREE.SphereGeometry(0.022, 10, 10);
+
+      for (let i = 0; i < posAttr.count; i++) {
+        const vx = posAttr.getX(i);
+        const vy = posAttr.getY(i);
+        const vz = posAttr.getZ(i);
+        const key = `${vx.toFixed(3)},${vy.toFixed(3)},${vz.toFixed(3)}`;
+        if (!seenVertices.has(key)) {
+          seenVertices.add(key);
+          const nMesh = new THREE.Mesh(nodeGeo, nodeMat);
+          nMesh.position.set(vx, vy, vz);
+          vertexNodesGroup.add(nMesh);
         }
-
-        hPos.setXYZ(i, v.x, v.y, v.z);
       }
-      headGeo.computeVertexNormals();
+      coreGroup.add(vertexNodesGroup);
 
-      const headMesh = new THREE.Mesh(headGeo, orangeMat);
-      bodyGroup.add(headMesh);
+      // 1d. Visor / eje focal frontal en el núcleo (acento que apunta al cursor)
+      const visorGroup = new THREE.Group();
+      visorGroup.position.set(0, 0, 0.68);
+      const visorRing = new THREE.Mesh(
+        new THREE.TorusGeometry(0.16, 0.012, 12, 36),
+        ringAccentMat
+      );
+      const visorCore = new THREE.Mesh(
+        new THREE.SphereGeometry(0.055, 16, 16),
+        nodeMat
+      );
+      visorCore.position.z = 0.02;
+      visorGroup.add(visorRing, visorCore);
+      coreGroup.add(visorGroup);
 
-      /* ---------- 2. OREJAS GRANDES (Triángulos redondeados con cavidad crema) ---------- */
-      function buildEar(side) {
-        // side: -1 (izquierda), +1 (derecha)
-        const earGroup = new THREE.Group();
+      /* ---------- 2. ANILLOS ORBITALES GIROSCÓPICOS ---------- */
+      // Anillo 1 (Interior — alta respuesta al cursor, color azul eléctrico)
+      const ring1Pivot = new THREE.Group();
+      const ring1Mesh = new THREE.Mesh(
+        new THREE.TorusGeometry(0.98, 0.014, 16, 100),
+        ringAccentMat
+      );
+      ring1Pivot.add(ring1Mesh);
 
-        // Geometría exterior naranja: esfera deformada en triángulo redondeado grueso
-        const outerGeo = new THREE.SphereGeometry(0.52, 48, 48);
-        const oPos = outerGeo.attributes.position;
-        const p = new THREE.Vector3();
+      // Dos nodos orbitales opuestos sobre el anillo 1
+      const r1NodeGeo = new THREE.SphereGeometry(0.036, 14, 14);
+      const r1NodeA = new THREE.Mesh(r1NodeGeo, nodeMat);
+      r1NodeA.position.set(0.98, 0, 0);
+      const r1NodeB = new THREE.Mesh(r1NodeGeo, nodeMat);
+      r1NodeB.position.set(-0.98, 0, 0);
+      ring1Pivot.add(r1NodeA, r1NodeB);
+      ring1Pivot.rotation.set(0.45, -0.35, 0.2);
+      ringsGroup.add(ring1Pivot);
 
-        for (let i = 0; i < oPos.count; i++) {
-          p.fromBufferAttribute(oPos, i);
-          // ny va de 0 (base) a 1 (punta redondeada)
-          const ny = (p.y + 0.52) / 1.04;
-          // Se estrecha suavemente hacia arriba manteniendo la punta ancha y redonda
-          const widthFactor = 1.12 - 0.52 * Math.pow(clamp(ny, 0, 1), 1.25);
-          p.x *= widthFactor;
-          p.y *= 1.06;
+      // Anillo 2 (Medio — gimbal estructural metálico oscuro + arco secundario)
+      const ring2Pivot = new THREE.Group();
+      const ring2Mesh = new THREE.Mesh(
+        new THREE.TorusGeometry(1.20, 0.021, 18, 120),
+        ringMetalMat
+      );
+      const ring2SubArc = new THREE.Mesh(
+        new THREE.TorusGeometry(1.245, 0.008, 12, 90, Math.PI * 1.35),
+        ringAccentMat
+      );
+      ring2SubArc.rotation.z = 0.4;
+      ring2Pivot.add(ring2Mesh, ring2SubArc);
 
-          // Espesor lateral redondeado (como en la referencia lateral) y leve concavidad frontal
-          p.z *= 0.36 * (1 - 0.18 * ny);
-          if (p.z > 0) {
-            const r2 = p.x * p.x + (p.y + 0.05) * (p.y + 0.05);
-            const indent = Math.max(0, 1 - r2 / 0.16);
-            p.z -= indent * 0.045;
-          }
-          oPos.setXYZ(i, p.x, p.y, p.z);
-        }
-        outerGeo.computeVertexNormals();
-        const outerMesh = new THREE.Mesh(outerGeo, orangeMat);
-        earGroup.add(outerMesh);
-
-        // Cavidad interior de color crema claro, ligeramente hundida dentro del borde naranja
-        const innerGeo = new THREE.SphereGeometry(0.39, 40, 40);
-        const iPos = innerGeo.attributes.position;
-        for (let i = 0; i < iPos.count; i++) {
-          p.fromBufferAttribute(iPos, i);
-          const ny = (p.y + 0.39) / 0.78;
-          const widthFactor = 1.08 - 0.54 * Math.pow(clamp(ny, 0, 1), 1.25);
-          p.x *= widthFactor;
-          p.y *= 1.04;
-          p.z *= 0.22;
-          // Hundimiento suave en el centro para dar volumen cóncavo
-          if (p.z > 0) {
-            const r2 = p.x * p.x + p.y * p.y;
-            const cup = Math.max(0, 1 - r2 / 0.11);
-            p.z -= cup * 0.032;
-          }
-          iPos.setXYZ(i, p.x, p.y, p.z);
-        }
-        innerGeo.computeVertexNormals();
-        const innerMesh = new THREE.Mesh(innerGeo, earInnerMat);
-        innerMesh.position.set(0, -0.03, 0.095);
-        earGroup.add(innerMesh);
-
-        // Posición y orientación simétrica en la parte superior de la cabeza
-        earGroup.position.set(side * 0.68, 0.68, -0.04);
-        earGroup.rotation.z = -side * 0.36;
-        earGroup.rotation.y = side * 0.12;
-        earGroup.rotation.x = 0.04;
-
-        bodyGroup.add(earGroup);
-        return earGroup;
+      // Marcadores de acople técnico en el anillo 2
+      const bracketGeo = new THREE.BoxGeometry(0.06, 0.06, 0.06);
+      for (let i = 0; i < 4; i++) {
+        const angle = (i * Math.PI) / 2;
+        const bracket = new THREE.Mesh(bracketGeo, ringAccentMat);
+        bracket.position.set(Math.cos(angle) * 1.20, Math.sin(angle) * 1.20, 0);
+        bracket.rotation.z = angle;
+        ring2Pivot.add(bracket);
       }
+      ring2Pivot.rotation.set(-0.62, 0.48, -0.15);
+      ringsGroup.add(ring2Pivot);
 
-      const leftEar = buildEar(-1);
-      const rightEar = buildEar(1);
+      // Anillo 3 (Exterior — halo orbital fino + satélites de datos)
+      const ring3Pivot = new THREE.Group();
+      const ring3Mesh = new THREE.Mesh(
+        new THREE.TorusGeometry(1.42, 0.011, 16, 128),
+        ringOuterMat
+      );
+      ring3Pivot.add(ring3Mesh);
 
-      /* ---------- 3. HOCICO OVALADO CREMA CLARO ----------
-         Pieza ovalada ancha en la región central-inferior, sobresaliente
-         (tal como se aprecia en la vista lateral). */
-      const muzzleGroup = new THREE.Group();
-      muzzleGroup.position.set(0, -0.26, 0.80);
-      bodyGroup.add(muzzleGroup);
-
-      const muzzleGeo = new THREE.SphereGeometry(0.49, 48, 48);
-      const mPos = muzzleGeo.attributes.position;
-      for (let i = 0; i < mPos.count; i++) {
-        v.fromBufferAttribute(mPos, i);
-        v.x *= 1.16;
-        v.y *= 0.86;
-        v.z *= 0.76;
-        // Parte inferior suavemente redondeada siguiendo la barbilla
-        if (v.y < -0.22) {
-          v.y = -0.22 + (v.y + 0.22) * 0.68;
-        }
-        mPos.setXYZ(i, v.x, v.y, v.z);
+      const r3NodeGeo = new THREE.SphereGeometry(0.028, 12, 12);
+      for (let i = 0; i < 3; i++) {
+        const angle = (i * Math.PI * 2) / 3;
+        const sat = new THREE.Mesh(r3NodeGeo, nodeMat);
+        sat.position.set(Math.cos(angle) * 1.42, Math.sin(angle) * 1.42, 0);
+        ring3Pivot.add(sat);
       }
-      muzzleGeo.computeVertexNormals();
-      const muzzleMesh = new THREE.Mesh(muzzleGeo, creamMat);
-      muzzleGroup.add(muzzleMesh);
+      ring3Pivot.rotation.set(0.88, 0.22, -0.52);
+      ringsGroup.add(ring3Pivot);
 
-      /* ---------- 4. NARIZ MARRÓN CHOCOLATE BRILLANTE ----------
-         Ubicada en la parte superior central del hocico, forma ovalada
-         horizontal / triángulo muy redondeado (ancha arriba, más estrecha abajo). */
-      const noseGeo = new THREE.SphereGeometry(0.185, 40, 40);
-      const nPos = noseGeo.attributes.position;
-      for (let i = 0; i < nPos.count; i++) {
-        v.fromBufferAttribute(nPos, i);
-        const ny = v.y / 0.185; // -1 abajo, +1 arriba
-        // Más ancha en la mitad superior y suavemente más estrecha abajo
-        const topWiden = 1.24 + 0.22 * Math.sin((ny + 0.35) * 1.2);
-        v.x *= topWiden;
-        v.y *= 0.82;
-        v.z *= 0.68;
-        nPos.setXYZ(i, v.x, v.y, v.z);
-      }
-      noseGeo.computeVertexNormals();
-      const noseMesh = new THREE.Mesh(noseGeo, noseMat);
-      noseMesh.position.set(0, 0.145, 0.34);
-      noseMesh.rotation.x = -0.14;
-      muzzleGroup.add(noseMesh);
+      /* ---------- 3. PARTÍCULAS / NODOS FLOTANTES AMBIENTALES ---------- */
+      const particlesGroup = new THREE.Group();
+      const pGeo = new THREE.SphereGeometry(0.018, 8, 8);
+      const particleOffsets = [
+        [-1.35, 0.85, -0.4],
+        [1.42, 0.72, -0.3],
+        [-1.28, -0.88, 0.3],
+        [1.32, -0.78, 0.25],
+        [0.15, 1.48, -0.2],
+        [-0.22, -1.45, 0.2],
+        [1.05, 1.12, 0.4],
+        [-1.12, 1.05, 0.35],
+      ];
+      const floatingParticles = particleOffsets.map((coords, idx) => {
+        const pm = new THREE.Mesh(pGeo, nodeMat);
+        pm.position.set(coords[0], coords[1], coords[2]);
+        particlesGroup.add(pm);
+        return {
+          mesh: pm,
+          baseX: coords[0],
+          baseY: coords[1],
+          baseZ: coords[2],
+          phase: idx * 0.9,
+        };
+      });
+      root.add(particlesGroup);
 
-      /* ---------- 5. BOCA MINIMALISTA (Y invertida) ----------
-         Línea vertical fina desde la nariz que se divide en dos pequeñas
-         líneas diagonales. Incluye variante sonriente al hacer clic. */
-      const mouthGroup = new THREE.Group();
-      mouthGroup.position.set(0, -0.02, 0.365);
-      muzzleGroup.add(mouthGroup);
-
-      function makeSegment(length, radius, x, y, z, rotZ) {
-        const geo = new THREE.CylinderGeometry(radius, radius, length, 12);
-        const mesh = new THREE.Mesh(geo, mouthMat);
-        mesh.position.set(x, y, z);
-        mesh.rotation.z = rotZ;
-        return mesh;
-      }
-
-      // Boca neutral (Y invertida fiel a la imagen)
-      const neutralMouth = new THREE.Group();
-      const stem = makeSegment(0.16, 0.0085, 0, -0.04, 0, 0);
-      const leftFork = makeSegment(0.085, 0.009, -0.036, -0.135, -0.004, -1.12);
-      const rightFork = makeSegment(0.085, 0.009, 0.036, -0.135, -0.004, 1.12);
-      neutralMouth.add(stem, leftFork, rightFork);
-      mouthGroup.add(neutralMouth);
-
-      // Boca feliz (pequeña sonrisa curva debajo de la línea vertical)
-      const happyMouth = new THREE.Group();
-      const happyStem = makeSegment(0.11, 0.009, 0, -0.015, 0, 0);
-      const smileArcGeo = new THREE.TorusGeometry(0.095, 0.012, 12, 28, Math.PI);
-      const smileArc = new THREE.Mesh(smileArcGeo, mouthMat);
-      smileArc.rotation.z = Math.PI;
-      smileArc.position.set(0, -0.07, 0);
-      happyMouth.add(happyStem, smileArc);
-      happyMouth.visible = false;
-      mouthGroup.add(happyMouth);
-
-      /* ---------- 6. OJOS NEGROS OVALADOS VERTICALES ----------
-         Dos pequeñas piezas ovaladas de color negro muy oscuro y acabado
-         satinado brillante, sin iris ni pestañas, que se desplazan
-         coordinadamente siguiendo la dirección del cursor. */
-      function buildEye(side) {
-        const anchor = new THREE.Group();
-        const baseX = side * 0.255;
-        const baseY = 0.075;
-        const baseZ = 0.945;
-        anchor.position.set(baseX, baseY, baseZ);
-
-        // Grupo móvil del ojo que se desplaza sobre la superficie frontal del rostro
-        const eyeMover = new THREE.Group();
-        anchor.add(eyeMover);
-
-        const eyeGeo = new THREE.SphereGeometry(0.105, 32, 32);
-        eyeGeo.scale(0.84, 1.15, 0.48); // orientación vertical redondeada
-        const eyeMesh = new THREE.Mesh(eyeGeo, eyeMat);
-        eyeMover.add(eyeMesh);
-
-        // Línea curva para cuando cierra los ojos (sueño / clic feliz)
-        const closedArcGeo = new THREE.TorusGeometry(0.082, 0.016, 12, 24, Math.PI);
-        const closedArcMesh = new THREE.Mesh(closedArcGeo, eyeMat);
-        closedArcMesh.position.set(0, 0, 0.03);
-        closedArcMesh.visible = false;
-        eyeMover.add(closedArcMesh);
-
-        bodyGroup.add(anchor);
-        return { anchor, eyeMover, eyeMesh, closedArcMesh, baseX, baseY, baseZ };
-      }
-
-      const leftEye = buildEye(-1);
-      const rightEye = buildEye(1);
+      /* ---------- 4. ONDA DE PULSO DE ENERGÍA AL HACER CLIC ---------- */
+      const pulseWaveMesh = new THREE.Mesh(
+        new THREE.RingGeometry(0.72, 0.78, 64),
+        pulseWaveMat
+      );
+      root.add(pulseWaveMesh);
 
       return {
         type: "three",
@@ -380,16 +334,24 @@ AC.heroCharacter = (function () {
         scene,
         camera,
         root,
-        bodyGroup,
+        coreGroup,
+        innerMesh,
+        shellMesh,
+        wireframeMesh,
+        vertexNodesGroup,
+        visorGroup,
+        ring1Pivot,
+        ring2Pivot,
+        ring3Pivot,
+        particlesGroup,
+        floatingParticles,
+        pulseWaveMesh,
         shadowMesh,
-        leftEar,
-        rightEar,
-        muzzleGroup,
-        noseMesh,
-        leftEye,
-        rightEye,
-        neutralMouth,
-        happyMouth,
+        corePointLight,
+        innerEnergyMat,
+        wireframeMat,
+        ringAccentMat,
+        pulseWaveMat,
         resize(w, h) {
           if (!w || !h) return;
           updateCameraFraming(w, h);
@@ -410,56 +372,45 @@ AC.heroCharacter = (function () {
   }
 
   /* =================================================================
-     FALLBACK INTERACTIVO (si WebGL o Three.js no estuvieran disponibles)
+     FALLBACK INTERACTIVO SVG (si WebGL no está disponible)
      ================================================================= */
   function createFallbackRig(container) {
     const ns = "http://www.w3.org/2000/svg";
     const svg = document.createElementNS(ns, "svg");
-    svg.setAttribute("viewBox", "0 0 400 440");
+    svg.setAttribute("viewBox", "0 0 400 400");
     svg.setAttribute("class", "hero-char__svg");
     svg.setAttribute("aria-hidden", "true");
 
     svg.innerHTML = `
       <defs>
-        <radialGradient id="bearHeadGrad" cx="45%" cy="28%" r="65%">
-          <stop offset="0%" stop-color="#ff9b42"/>
-          <stop offset="65%" stop-color="#f27d24"/>
-          <stop offset="100%" stop-color="#c95b12"/>
+        <radialGradient id="coreGlowGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#4d88ff" stop-opacity="0.45"/>
+          <stop offset="60%" stop-color="#155df2" stop-opacity="0.14"/>
+          <stop offset="100%" stop-color="#155df2" stop-opacity="0"/>
         </radialGradient>
-        <radialGradient id="bearCreamGrad" cx="50%" cy="35%" r="65%">
-          <stop offset="0%" stop-color="#fff3e2"/>
-          <stop offset="70%" stop-color="#f5dbb9"/>
-          <stop offset="100%" stop-color="#d9b58c"/>
-        </radialGradient>
-        <radialGradient id="bearNoseGrad" cx="40%" cy="30%" r="65%">
-          <stop offset="0%" stop-color="#754632"/>
-          <stop offset="55%" stop-color="#4b2818"/>
-          <stop offset="100%" stop-color="#2b140a"/>
-        </radialGradient>
+        <linearGradient id="coreMetalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#28334d"/>
+          <stop offset="50%" stop-color="#181f30"/>
+          <stop offset="100%" stop-color="#0f1420"/>
+        </linearGradient>
       </defs>
-      <g id="hcBodyGroup" transform="translate(200, 235)">
-        <!-- Orejas -->
-        <g transform="translate(-95, -95) rotate(-22)">
-          <path d="M -52 40 C -58 -25, -24 -68, 0 -68 C 24 -68, 58 -25, 52 40 Z" fill="url(#bearHeadGrad)"/>
-          <path d="M -36 32 C -40 -14, -17 -46, 0 -46 C 17 -46, 40 -14, 36 32 Z" fill="#f3d4b0"/>
+      <g transform="translate(200, 200)">
+        <circle r="155" fill="url(#coreGlowGrad)"/>
+        <g id="svgRing3">
+          <ellipse rx="148" ry="62" fill="none" stroke="#4d88ff" stroke-width="1.5" stroke-opacity="0.5" transform="rotate(-28)"/>
         </g>
-        <g transform="translate(95, -95) rotate(22)">
-          <path d="M -52 40 C -58 -25, -24 -68, 0 -68 C 24 -68, 58 -25, 52 40 Z" fill="url(#bearHeadGrad)"/>
-          <path d="M -36 32 C -40 -14, -17 -46, 0 -46 C 17 -46, 40 -14, 36 32 Z" fill="#f3d4b0"/>
+        <g id="svgRing2">
+          <ellipse rx="124" ry="84" fill="none" stroke="#2c3a57" stroke-width="3" transform="rotate(32)"/>
+          <ellipse rx="124" ry="84" fill="none" stroke="#155df2" stroke-width="1.5" stroke-dasharray="110 180" transform="rotate(32)"/>
         </g>
-        <!-- Cabeza -->
-        <path d="M 0 -115 C 95 -115, 148 -55, 148 22 C 148 82, 108 112, 0 112 C -108 112, -148 82, -148 22 C -148 -55, -95 -115, 0 -115 Z" fill="url(#bearHeadGrad)"/>
-        <!-- Hocico -->
-        <ellipse cx="0" cy="42" rx="68" ry="52" fill="#f7dec1"/>
-        <!-- Ojos -->
-        <g id="hcEyeGroup">
-          <ellipse id="hcEyeL" cx="-36" cy="-12" rx="13" ry="17" fill="#1c1c21"/>
-          <ellipse id="hcEyeR" cx="36" cy="-12" rx="13" ry="17" fill="#1c1c21"/>
+        <g id="svgRing1">
+          <ellipse rx="98" ry="44" fill="none" stroke="#155df2" stroke-width="2" transform="rotate(-12)"/>
         </g>
-        <!-- Nariz -->
-        <path d="M -32 16 C -32 2, 32 2, 32 16 C 32 32, 12 42, 0 42 C -12 42, -32 32, -32 16 Z" fill="url(#bearNoseGrad)"/>
-        <!-- Boca Y invertida -->
-        <path id="hcMouth" d="M 0 42 L 0 66 M 0 66 L -12 73 M 0 66 L 12 73" stroke="#3b2219" stroke-width="3" stroke-linecap="round" fill="none"/>
+        <g id="svgCoreGroup">
+          <polygon points="0,-64 55,-32 55,32 0,64 -55,32 -55,-32" fill="url(#coreMetalGrad)" stroke="#4d88ff" stroke-width="1.8"/>
+          <polygon points="0,-38 33,-19 33,19 0,38 -33,19 -33,-19" fill="#155df2" fill-opacity="0.35" stroke="#76a9ff" stroke-width="1.4"/>
+          <circle r="10" fill="#76a9ff"/>
+        </g>
       </g>
     `;
     container.appendChild(svg);
@@ -467,8 +418,10 @@ AC.heroCharacter = (function () {
     return {
       type: "svg",
       svg,
-      bodyGroup: svg.querySelector("#hcBodyGroup"),
-      eyeGroup: svg.querySelector("#hcEyeGroup"),
+      coreGroup: svg.querySelector("#svgCoreGroup"),
+      ring1: svg.querySelector("#svgRing1"),
+      ring2: svg.querySelector("#svgRing2"),
+      ring3: svg.querySelector("#svgRing3"),
       resize() {},
       render() {},
       dispose() {
@@ -478,13 +431,13 @@ AC.heroCharacter = (function () {
   }
 
   /* =================================================================
-     2. SEGUIMIENTO DE LOS OJOS (EyeTracker)
-     Calcula la dirección hacia el cursor respecto al centro del oso,
-     desplazando coordinadamente ambos ojos con interpolación suave.
+     2. SEGUIMIENTO DEL CURSOR (CursorTracker)
+     Calcula la posición normalizada del cursor respecto al centro del
+     núcleo 3D para orientar el núcleo y aplicar paralaje a los anillos.
      ================================================================= */
-  function createEyeTracker(container) {
+  function createCursorTracker(container) {
     const state = {
-      targetX: 0, // rango normalizado [-1, 1]
+      targetX: 0, // [-1, 1]
       targetY: 0,
       currentX: 0,
       currentY: 0,
@@ -495,36 +448,29 @@ AC.heroCharacter = (function () {
       if (!rect.width || !rect.height) return;
 
       const centerX = rect.left + rect.width * 0.5;
-      const centerY = rect.top + rect.height * 0.47;
+      const centerY = rect.top + rect.height * 0.5;
 
       const dx = clientX - centerX;
       const dy = clientY - centerY;
       const dist = Math.hypot(dx, dy);
 
-      const refRadius = Math.max(rect.width, rect.height) * 0.75;
+      const refRadius = Math.max(rect.width, rect.height) * 0.85;
       const strength = Math.tanh(dist / refRadius);
       const angle = Math.atan2(dy, dx);
 
       state.targetX = Math.cos(angle) * strength;
-      state.targetY = -Math.sin(angle) * strength; // +Y es arriba en 3D
+      state.targetY = -Math.sin(angle) * strength; // +Y hacia arriba en 3D
     }
 
-    function step(sleepingWeight) {
-      const tx = sleepingWeight > 0.5 ? 0 : state.targetX * (1 - sleepingWeight);
-      const ty = sleepingWeight > 0.5 ? 0 : state.targetY * (1 - sleepingWeight);
+    function step(standbyWeight) {
+      const factor = 1 - standbyWeight * 0.65;
+      const tx = state.targetX * factor;
+      const ty = state.targetY * factor;
 
-      state.currentX = lerp(state.currentX, tx, CONFIG.eyeLerp);
-      state.currentY = lerp(state.currentY, ty, CONFIG.eyeLerp);
-
-      const mag = Math.hypot(state.currentX, state.currentY);
-      if (mag > 1) {
-        state.currentX /= mag;
-        state.currentY /= mag;
-      }
+      state.currentX = lerp(state.currentX, tx, CONFIG.trackLerp);
+      state.currentY = lerp(state.currentY, ty, CONFIG.trackLerp);
 
       return {
-        x: state.currentX * CONFIG.eyeMaxOffsetX,
-        y: state.currentY * CONFIG.eyeMaxOffsetY,
         normX: state.currentX,
         normY: state.currentY,
       };
@@ -534,215 +480,174 @@ AC.heroCharacter = (function () {
   }
 
   /* =================================================================
-     3. SISTEMA DE INACTIVIDAD Y ESTADOS (despierto / dormido / feliz)
+     3. CONTROL DE ESTADOS, PARALAJE GIROSCÓPICO Y PULSO DE ENERGÍA
      ================================================================= */
   function init() {
     const container = $("#heroCharacter");
     if (!container) return;
 
     const rig = createThreeRig(container) || createFallbackRig(container);
-    const eyeTracker = createEyeTracker(container);
+    const tracker = createCursorTracker(container);
 
     requestAnimationFrame(() => {
       rig.resize(container.clientWidth, container.clientHeight);
     });
 
     const state = {
-      mode: "awake",          // "awake" | "sleeping" | "happy"
-      sleepWeight: 0,         // 0 = despierto, 1 = completamente dormido
-      happyWeight: 0,         // 0 = normal, 1 = pico de felicidad
-      happyStartTime: 0,
-      isAnimatingHappy: false,
-      blinkWeight: 0,
-      nextBlinkTime: performance.now() + 2400,
-      blinkStartTime: 0,
-      isBlinking: false,
+      standbyWeight: 0,         // 0 = activo, 1 = crucero standby suave
+      pulseStartTime: 0,
+      isPulsing: false,
+      spinSpinAccumulator: 0,   // rotación extra acumulada durante los pulsos al hacer clic
+      lastFrameTime: performance.now(),
       lastActivityTime: performance.now(),
       isInViewport: true,
     };
 
-    function setSleeping(sleeping) {
-      if (sleeping && state.mode !== "sleeping" && !state.isAnimatingHappy) {
-        state.mode = "sleeping";
-        container.classList.add("is-sleeping");
-      } else if (!sleeping && state.mode === "sleeping") {
-        state.mode = "awake";
-        container.classList.remove("is-sleeping");
-      }
-    }
-
     function registerActivity(clientX, clientY) {
       state.lastActivityTime = performance.now();
       if (typeof clientX === "number" && typeof clientY === "number") {
-        eyeTracker.updateTargetFromPoint(clientX, clientY);
-      }
-      if (state.mode === "sleeping") {
-        setSleeping(false);
+        tracker.updateTargetFromPoint(clientX, clientY);
       }
     }
 
-    function triggerHappy(e) {
+    function triggerPulse(e) {
       if (e) e.stopPropagation();
       state.lastActivityTime = performance.now();
-      setSleeping(false);
-
-      if (state.isAnimatingHappy) return;
-      state.isAnimatingHappy = true;
-      state.mode = "happy";
-      state.happyStartTime = performance.now();
+      state.isPulsing = true;
+      state.pulseStartTime = performance.now();
     }
 
-    function applyToRig(now, eyeOffset) {
+    function applyToRig(now, cursor) {
       const reduced = prefersReducedMotion();
+      const dt = Math.min((now - state.lastFrameTime) * 0.001, 0.1);
+      state.lastFrameTime = now;
       const t = now * 0.001;
 
-      // 1. Transición progresiva de sueño (10s de inactividad)
-      if (!state.isAnimatingHappy && now - state.lastActivityTime >= CONFIG.inactivityMs) {
-        setSleeping(true);
-      }
-      const targetSleep = state.mode === "sleeping" ? 1 : 0;
-      state.sleepWeight = lerp(state.sleepWeight, targetSleep, state.mode === "sleeping" ? 0.035 : 0.09);
+      // 1. Modo standby suave tras 10s sin mover el cursor
+      const isInactive = !state.isPulsing && now - state.lastActivityTime >= CONFIG.inactivityMs;
+      state.standbyWeight = lerp(state.standbyWeight, isInactive ? 1 : 0, 0.04);
 
-      // 2. Progreso de la animación de felicidad al hacer clic
-      let happyBounceY = 0;
-      let happySquashX = 1;
-      let happySquashY = 1;
-      let earWiggle = 0;
+      // 2. Pulso de energía y aceleración giroscópica al hacer clic
+      let pulseIntensity = 0;
+      let pulseProgress = 0;
 
-      if (state.isAnimatingHappy) {
-        const elapsed = now - state.happyStartTime;
-        const p = clamp(elapsed / CONFIG.happyDurationMs, 0, 1);
+      if (state.isPulsing) {
+        const elapsed = now - state.pulseStartTime;
+        pulseProgress = clamp(elapsed / CONFIG.pulseDurationMs, 0, 1);
+        pulseIntensity = Math.sin(pulseProgress * Math.PI);
 
-        state.happyWeight = Math.sin(p * Math.PI);
-
+        // Aceleración rápida de los anillos durante el pulso
         if (!reduced) {
-          happyBounceY = Math.sin(p * Math.PI) * 0.15 * (1 - p * 0.35);
-          const squashWave = Math.sin(p * Math.PI * 2.2) * (1 - p);
-          happySquashX = 1 - squashWave * 0.055;
-          happySquashY = 1 + squashWave * 0.065;
-          earWiggle = Math.sin(p * Math.PI * 4) * 0.09 * (1 - p);
+          state.spinSpinAccumulator += dt * pulseIntensity * 8.5;
         }
 
-        if (p >= 1) {
-          state.isAnimatingHappy = false;
-          state.happyWeight = 0;
-          state.mode = "awake";
+        if (pulseProgress >= 1) {
+          state.isPulsing = false;
+          pulseIntensity = 0;
         }
-      } else {
-        state.happyWeight = lerp(state.happyWeight, 0, 0.15);
       }
 
-      // 3. Parpadeo natural y aleatorio cuando está despierto
-      if (state.sleepWeight < 0.15 && !state.isAnimatingHappy) {
-        if (!state.isBlinking && now >= state.nextBlinkTime) {
-          state.isBlinking = true;
-          state.blinkStartTime = now;
-        }
-        if (state.isBlinking) {
-          const bp = (now - state.blinkStartTime) / CONFIG.blinkDuration;
-          if (bp >= 1) {
-            state.isBlinking = false;
-            state.blinkWeight = 0;
-            state.nextBlinkTime =
-              now +
-              CONFIG.blinkIntervalMin +
-              Math.random() * (CONFIG.blinkIntervalMax - CONFIG.blinkIntervalMin);
-          } else {
-            state.blinkWeight = Math.sin(bp * Math.PI);
-          }
-        }
-      } else {
-        state.isBlinking = false;
-        state.blinkWeight = 0;
-      }
+      const speedMult = reduced ? 0.15 : lerp(1.0, 0.45, state.standbyWeight);
+      const extraSpin = state.spinSpinAccumulator;
 
-      // 4. Respiración orgánica y postura
-      const breathSpeed = lerp(2.0, 1.15, state.sleepWeight);
-      const breathAmp = reduced ? 0 : lerp(0.015, 0.024, state.sleepWeight);
-      const breath = Math.sin(t * breathSpeed) * breathAmp;
-
-      const sleepDropY = -0.05 * state.sleepWeight;
-      const sleepTiltX = 0.11 * state.sleepWeight;
-      const sleepTiltZ = -0.04 * state.sleepWeight;
-
-      // Micro-orientación sutil acompañando la mirada
-      const subtleTurnY = eyeOffset.normX * 0.08 * (1 - state.sleepWeight);
-      const subtleTurnX = -eyeOffset.normY * 0.055 * (1 - state.sleepWeight);
-
-      const eyeClose = clamp(
-        Math.max(state.blinkWeight, state.sleepWeight, state.happyWeight * 0.95),
-        0,
-        1
-      );
+      // Flotación vertical orgánica del sistema completo
+      const floatY = reduced ? 0 : Math.sin(t * 1.7) * 0.055;
 
       if (rig.type === "three") {
-        // --- Cabeza ---
-        rig.bodyGroup.position.y = breath * 0.6 + sleepDropY + happyBounceY;
-        rig.bodyGroup.scale.set(
-          (1 - breath * 0.4) * happySquashX,
-          (1 + breath) * happySquashY,
-          (1 - breath * 0.4) * happySquashX
-        );
-        rig.bodyGroup.rotation.set(
-          sleepTiltX + subtleTurnX,
-          subtleTurnY,
-          sleepTiltZ + (reduced ? 0 : Math.sin(t * 0.85) * 0.01)
-        );
+        rig.root.position.y = floatY;
 
-        // Orejas con micro-movimiento al alegrarse o dormir
-        rig.leftEar.rotation.z = 0.36 + earWiggle - state.sleepWeight * 0.05;
-        rig.rightEar.rotation.z = -0.36 - earWiggle + state.sleepWeight * 0.05;
+        // --- A. Núcleo central apunta hacia el cursor ---
+        const targetRotY = cursor.normX * CONFIG.coreMaxRotY;
+        const targetRotX = -cursor.normY * CONFIG.coreMaxRotX;
 
-        // Sombra
-        const shadowScale = 1 - happyBounceY * 0.4 + breath * 0.4;
-        rig.shadowMesh.scale.set(shadowScale, shadowScale, 1);
+        rig.coreGroup.rotation.y = targetRotY;
+        rig.coreGroup.rotation.x = targetRotX;
+        rig.coreGroup.rotation.z = reduced ? 0 : Math.sin(t * 0.9) * 0.06;
 
-        // --- Seguimiento de los ojos ---
-        [rig.leftEye, rig.rightEye].forEach((eye) => {
-          eye.eyeMover.position.x = eyeOffset.x;
-          eye.eyeMover.position.y = eyeOffset.y;
-          // Ajuste leve en Z para acompañar la curvatura frontal al moverse a los lados
-          eye.eyeMover.position.z = -Math.abs(eyeOffset.x) * 0.14;
+        // Rotación interna lenta de las facetas y contra-rotación de la jaula wireframe
+        rig.shellMesh.rotation.y = t * 0.28 * speedMult + extraSpin * 0.35;
+        rig.shellMesh.rotation.x = t * 0.18 * speedMult;
 
-          const openFactor = clamp(1 - eyeClose, 0.08, 1);
-          eye.eyeMesh.scale.set(0.84, 1.15 * openFactor, 0.48);
-          eye.eyeMesh.visible = eyeClose < 0.76;
+        rig.wireframeMesh.rotation.y = -t * 0.36 * speedMult - extraSpin * 0.5;
+        rig.wireframeMesh.rotation.z = t * 0.22 * speedMult;
+        rig.vertexNodesGroup.rotation.copy(rig.wireframeMesh.rotation);
 
-          eye.closedArcMesh.visible = eyeClose >= 0.72;
-          if (eye.closedArcMesh.visible) {
-            eye.closedArcMesh.rotation.z = state.happyWeight > 0.45 ? 0 : Math.PI;
-          }
+        // Escala elástica del núcleo con respiración + pulso de energía al clic
+        const breathScale = 1 + Math.sin(t * 2.6) * 0.025;
+        const pulseScale = 1 + pulseIntensity * 0.16;
+        rig.coreGroup.scale.setScalar(breathScale * pulseScale);
+        rig.innerMesh.scale.setScalar(1 + pulseIntensity * 0.25);
+
+        // Intensidad luminosa reactiva al pulso y a la cercanía del cursor
+        const cursorEnergy = Math.hypot(cursor.normX, cursor.normY) * 0.25;
+        rig.innerEnergyMat.emissiveIntensity = 0.85 + cursorEnergy + pulseIntensity * 1.65;
+        rig.ringAccentMat.emissiveIntensity = 0.6 + cursorEnergy * 0.8 + pulseIntensity * 1.3;
+        rig.wireframeMat.opacity = clamp(0.55 + cursorEnergy * 0.25 + pulseIntensity * 0.4, 0.3, 1);
+        rig.corePointLight.intensity = 1.2 + pulseIntensity * 2.2;
+
+        // --- B. Anillos giroscópicos con paralaje en distintas velocidades ---
+        // Anillo 1 (Interior - paralaje fuerte y giro ágil)
+        rig.ring1Pivot.rotation.x = 0.45 + t * 0.85 * speedMult + extraSpin * 1.15 - cursor.normY * 0.48;
+        rig.ring1Pivot.rotation.y = -0.35 + t * 0.62 * speedMult + extraSpin * 0.8 + cursor.normX * 0.52;
+        rig.ring1Pivot.rotation.z = 0.2 + t * 0.4 * speedMult;
+
+        // Anillo 2 (Medio - gimbal estructural con paralaje invertido)
+        rig.ring2Pivot.rotation.x = -0.62 - t * 0.48 * speedMult - extraSpin * 0.85 + cursor.normY * 0.32;
+        rig.ring2Pivot.rotation.y = 0.48 + t * 0.54 * speedMult + extraSpin * 0.95 + cursor.normX * 0.36;
+        rig.ring2Pivot.rotation.z = -0.15 - t * 0.32 * speedMult;
+
+        // Anillo 3 (Exterior - órbita amplia y majestuosa)
+        rig.ring3Pivot.rotation.x = 0.88 + t * 0.26 * speedMult + extraSpin * 0.55 - cursor.normY * 0.20;
+        rig.ring3Pivot.rotation.y = 0.22 - t * 0.34 * speedMult - extraSpin * 0.65 - cursor.normX * 0.24;
+        rig.ring3Pivot.rotation.z = -0.52 + t * 0.28 * speedMult;
+
+        // --- C. Partículas flotantes con paralaje suave ---
+        rig.particlesGroup.rotation.y = cursor.normX * 0.18 + t * 0.08 * speedMult;
+        rig.particlesGroup.rotation.x = -cursor.normY * 0.14;
+        rig.floatingParticles.forEach((p) => {
+          p.mesh.position.y = p.baseY + Math.sin(t * 1.8 + p.phase) * 0.06;
         });
 
-        // El hocico y la nariz acompañan sutilmente el ángulo de mirada para dar vida
-        rig.muzzleGroup.position.x = eyeOffset.x * 0.22;
-        rig.muzzleGroup.position.y = -0.26 + eyeOffset.y * 0.15;
+        // --- D. Onda expansiva al hacer clic ---
+        if (state.isPulsing) {
+          const waveScale = 1 + pulseProgress * 1.35;
+          rig.pulseWaveMesh.scale.setScalar(waveScale);
+          rig.pulseWaveMesh.rotation.x = targetRotX * 0.5;
+          rig.pulseWaveMesh.rotation.y = targetRotY * 0.5;
+          rig.pulseWaveMat.opacity = (1 - pulseProgress) * 0.78;
+          rig.pulseWaveMesh.visible = true;
+        } else {
+          rig.pulseWaveMesh.visible = false;
+        }
 
-        // --- Boca: Y invertida neutral vs sonrisa al hacer clic ---
-        const isHappyMouth = state.happyWeight > 0.35;
-        rig.neutralMouth.visible = !isHappyMouth;
-        rig.happyMouth.visible = isHappyMouth;
+        // --- E. Sombra / resplandor inferior ---
+        const shadowScale = 1 - floatY * 0.5 + pulseIntensity * 0.22;
+        rig.shadowMesh.scale.set(shadowScale, shadowScale, 1);
 
         rig.render();
       } else {
-        const px = (eyeOffset.normX * 8).toFixed(2);
-        const py = (-eyeOffset.normY * 6.5).toFixed(2);
-        rig.eyeGroup.setAttribute("transform", `translate(${px}, ${py})`);
+        // Fallback SVG interactivo
+        const tx = (cursor.normX * 14).toFixed(2);
+        const ty = (-cursor.normY * 14).toFixed(2);
+        rig.coreGroup.setAttribute("transform", `translate(${tx}, ${ty}) scale(${(1 + pulseIntensity * 0.14).toFixed(3)})`);
+        rig.ring1.setAttribute("transform", `rotate(${(t * 28 + cursor.normX * 20).toFixed(1)})`);
+        rig.ring2.setAttribute("transform", `rotate(${(-t * 18 + cursor.normY * 15).toFixed(1)})`);
+        rig.ring3.setAttribute("transform", `rotate(${(t * 10 - cursor.normX * 10).toFixed(1)})`);
       }
     }
 
-    /* ---------- 5. Ciclo único de animación (requestAnimationFrame) ---------- */
+    /* ---------- Ciclo de animación ---------- */
     let rafId = null;
     function tick(now) {
       if (state.isInViewport) {
-        const eyeOffset = eyeTracker.step(state.sleepWeight);
-        applyToRig(now, eyeOffset);
+        const cursor = tracker.step(state.standbyWeight);
+        applyToRig(now, cursor);
       }
       rafId = requestAnimationFrame(tick);
     }
     rafId = requestAnimationFrame(tick);
 
-    /* ---------- Eventos de interacción y limpieza ---------- */
+    /* ---------- Eventos ---------- */
     const onPointerMove = (e) => registerActivity(e.clientX, e.clientY);
     const onTouchStart = (e) => {
       const touch = e.touches?.[0];
@@ -750,11 +655,11 @@ AC.heroCharacter = (function () {
       else registerActivity();
     };
     const onKeyOrScroll = () => registerActivity();
-    const onCharacterClick = (e) => triggerHappy(e);
+    const onCharacterClick = (e) => triggerPulse(e);
     const onCharacterKeyDown = (e) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        triggerHappy(e);
+        triggerPulse(e);
       }
     };
     const onResize = () => rig.resize(container.clientWidth, container.clientHeight);
@@ -800,7 +705,7 @@ AC.heroCharacter = (function () {
       rig.dispose();
     }
 
-    return { destroy, triggerHappy };
+    return { destroy };
   }
 
   return { init };
