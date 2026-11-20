@@ -1,4 +1,4 @@
-# Portafolio — Alejandro Castro · Ingeniero Multimedia
+# Portafolio — Alejandro Palacio · Ingeniero Multimedia
 
 Sitio estático (HTML + CSS + JS vanilla, sin build). Abre `index.html` con doble clic o con un servidor local (ej. extensión *Live Server* de VS Code).
 
