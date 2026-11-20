@@ -212,46 +212,6 @@
     </section>
 
     <!-- ==========================================================
-         03. SHOWREEL
-         Configura la fuente en data-video-* (mp4, YouTube o Vimeo)
-         ========================================================== -->
-    <section id="showreel" class="section showreel" data-section="Showreel">
-      <div class="container">
-        <header class="section-head reveal">
-          <p class="eyebrow">Showreel 2026</p>
-          <h2 class="section-title">90 segundos que resumen <span class="gradient-text">lo que hago</span></h2>
-        </header>
-
-        <!--
-          data-video-type: "mp4" | "youtube" | "vimeo"
-          data-video-src : ruta del mp4 o ID del video (YouTube/Vimeo)
-          Si data-video-src está vacío se muestra el placeholder.
-        -->
-        <div class="showreel__player reveal" id="showreelPlayer"
-             data-video-type="youtube"
-             data-video-src="">
-          <div class="media-ph media-ph--video" data-label="Showreel · Video 16:9">
-            <svg class="icon"><use href="#i-video"></use></svg>
-          </div>
-          <button class="showreel__play" type="button" aria-label="Reproducir showreel">
-            <span class="showreel__play-ring"></span>
-            <svg class="icon"><use href="#i-play"></use></svg>
-            <span class="showreel__play-label">Play reel</span>
-          </button>
-        </div>
-
-        <!-- Capítulos: ayuda a reclutadores a saltar a lo que buscan -->
-        <ol class="showreel__chapters reveal">
-          <li><span>00:00</span> Motion & Branding</li>
-          <li><span>00:18</span> Animación 2D</li>
-          <li><span>00:35</span> 3D & Rigging</li>
-          <li><span>00:55</span> Web & UI</li>
-          <li><span>01:15</span> IA aplicada</li>
-        </ol>
-      </div>
-    </section>
-
-    <!-- ==========================================================
          04. SERVICIOS — se renderizan desde js/data/services.js
          ========================================================== -->
     <section id="servicios" class="section services" data-section="Servicios">
@@ -539,7 +499,6 @@
 
     <ul class="dock__list">
       <li><a class="dock__item" href="#hero" data-dock="hero"><svg class="icon"><use href="#i-home"></use></svg><span class="dock__label">Inicio</span></a></li>
-      <li><a class="dock__item" href="#showreel" data-dock="showreel"><svg class="icon"><use href="#i-play"></use></svg><span class="dock__label">Reel</span></a></li>
       <li><a class="dock__item" href="#servicios" data-dock="servicios"><svg class="icon"><use href="#i-layers"></use></svg><span class="dock__label">Servicios</span></a></li>
       <li class="dock__has-panel">
         <a class="dock__item" href="#trabajos" data-dock="trabajos"><svg class="icon"><use href="#i-grid"></use></svg><span class="dock__label">Trabajos</span></a>
@@ -584,7 +543,6 @@
   <!-- Three.js para la criatura 3D del Hero (con fallback automático si no hay red) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="js/modules/heroCharacter.js"></script>
-  <script src="js/modules/showreel.js"></script>
   <script src="js/modules/services.js"></script>
   <script src="js/modules/portfolio.js"></script>
   <script src="js/modules/projectModal.js"></script>

@@ -199,46 +199,6 @@
   object-fit: contain;
 }
 
-/* =========================== 03. SHOWREEL =========================== */
-.showreel__player {
-  position: relative;
-  border-radius: var(--r-xl);
-  overflow: hidden;
-  border: 1px solid var(--c-border-2);
-  box-shadow: var(--shadow-glow);
-  aspect-ratio: 16 / 9;
-  background: #000;
-}
-.showreel__player > .media-ph,
-.showreel__player > video,
-.showreel__player > iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
-.showreel__play {
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  width: clamp(90px, 12vw, 140px);
-  height: clamp(90px, 12vw, 140px);
-  border-radius: 50%;
-  display: grid; place-items: center;
-  background: #fff;
-  color: #000;
-  transition: transform var(--dur) var(--ease-out);
-  z-index: 2;
-}
-.showreel__play:hover { transform: scale(1.08); }
-.showreel__play .icon { width: 34%; height: 34%; fill: currentColor; stroke: none; margin-left: 6%; }
-.showreel__play-ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid #fff; animation: ring 2s ease-out infinite; }
-.showreel__play-label { position: absolute; top: calc(100% + 12px); font-family: var(--ff-display); color: #fff; font-size: var(--fs-sm); white-space: nowrap; }
-.showreel__player.is-playing .showreel__play { display: none; }
-
-.showreel__chapters {
-  display: flex; flex-wrap: wrap; gap: var(--sp-3) var(--sp-6);
-  margin-top: var(--sp-5);
-  color: var(--c-text-dim);
-  font-size: var(--fs-sm);
-}
-.showreel__chapters span { font-family: var(--ff-display); color: var(--c-accent-2); margin-right: 6px; }
-
 /* =========================== 04. SERVICIOS =========================== */
 .services__grid {
   display: grid;

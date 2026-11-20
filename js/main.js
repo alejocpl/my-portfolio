@@ -18,7 +18,6 @@
     "portfolio",
     "hero",
     "heroCharacter",   // criatura 3D interactiva en .hero__visual
-    "showreel",
     "projectModal",
     "dock",
     "contactForm",
