@@ -1,20 +1,26 @@
 /* =================================================================
    ANIMATIONS.CSS
-   Keyframes globales y sistema de "reveal" al hacer scroll.
-   Añade la clase .reveal a cualquier elemento; js/modules/reveal.js
-   le agrega .is-visible cuando entra en pantalla.
+   design-taste-frontend motion system:
+   - El Hero entra una sola vez al cargar (cubic-bezier(.22, 1, .36, 1))
+   - El resto de secciones permanecen listas y legibles en reposo (sin fade-in en cada scroll)
    ================================================================= */
 
 .reveal {
+  opacity: 1;
+  transform: none;
+}
+
+.hero .reveal {
   opacity: 0;
-  transform: translateY(28px);
-  transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out);
+  transform: translateY(12px);
+  transition: opacity 520ms var(--ease-enter), transform 520ms var(--ease-enter);
   transition-delay: var(--reveal-delay, 0s);
 }
-.reveal.is-visible { opacity: 1; transform: none; }
-
-/* Si JS no carga, mostrar todo (clase .no-js se quita en main.js) */
-.no-js .reveal { opacity: 1; transform: none; }
+.hero .reveal.is-visible,
+.no-js .hero .reveal {
+  opacity: 1;
+  transform: none;
+}
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 

@@ -210,21 +210,20 @@
   padding: var(--sp-6);
   border-radius: var(--r-lg);
   border: 1px solid var(--c-border);
-  background: var(--c-tint);
+  background: var(--c-surface);
 }
 .process__num {
   display: block;
-  margin-bottom: var(--sp-6);
+  margin-bottom: var(--sp-5);
   font-family: var(--ff-display);
-  font-size: 3rem;
+  font-size: 2.25rem;
   font-weight: 600;
   line-height: 1;
-  background: var(--grad-main);
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-  opacity: 0.9;
+  color: var(--c-accent-2);
+  letter-spacing: -0.03em;
 }
 .process__step h3 { font-size: 1.25rem; margin-bottom: var(--sp-2); }
-.process__step p { color: var(--c-text-dim); font-size: var(--fs-sm); }
+.process__step p { color: var(--c-text-dim); font-size: var(--fs-base); line-height: 1.6; }
 
 /* =========================== 07. POR QUÉ =========================== */
 .why__layout { display: grid; gap: var(--sp-5); margin-bottom: var(--sp-6); }
@@ -251,17 +250,43 @@
   border-radius: var(--r-lg);
   background: var(--c-surface);
   border: 1px solid var(--c-border);
-  transition: border-color var(--dur);
+  transition: border-color 180ms var(--ease-out);
 }
 .why-card:hover { border-color: var(--c-border-2); }
-.why-card__icon { width: 32px; height: 32px; color: var(--c-accent-2); margin-bottom: var(--sp-5); }
+.why-card__icon { width: 28px; height: 28px; color: var(--c-accent-2); margin-bottom: var(--sp-4); }
 .why-card h3 { font-size: 1.2rem; margin-bottom: var(--sp-2); }
-.why-card p { color: var(--c-text-dim); font-size: var(--fs-sm); }
+.why-card p { color: var(--c-text-dim); font-size: var(--fs-base); line-height: 1.6; }
 
 .tools { margin-bottom: var(--sp-6); }
-.tools__title { color: var(--c-text-mute); font-size: var(--fs-sm); margin-bottom: var(--sp-4); }
+.tools__title { color: var(--c-text-mute); font-size: var(--fs-sm); font-weight: 500; margin-bottom: var(--sp-4); }
 .tools__list { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
-.tools__list li { padding: 8px 16px; border-radius: var(--r-pill); border: 1px solid var(--c-border-2); font-size: var(--fs-sm); color: var(--c-text-dim); }
+.tools__list li,
+.tool-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 38px;
+  padding: 6px 14px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--c-border);
+  background: var(--c-surface);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--c-text);
+}
+.tool-chip img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+/* Logos oscuros como GitHub se invierten en modo oscuro para contraste */
+.tool-chip__ink {
+  filter: invert(1) brightness(1.8);
+}
+[data-theme="light"] .tool-chip__ink {
+  filter: none;
+}
 
 .testimonials { display: grid; gap: var(--sp-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
 .testimonial {
