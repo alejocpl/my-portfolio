@@ -48,7 +48,7 @@ export const PERSONAL_INFO = {
   githubUrl: 'https://github.com/alejocpl',
   cvUrl: '/cv-alejandro-palacio.pdf',
   editorialHeadline:
-    'Soy Ingeniero Multimedia especializado en Desarrollo Frontend, Diseño UI/UX, Diseño Gráfico, Animación y 3D.',
+    'Soy Ingeniero Multimedia con conocimiento en Desarrollo Frontend, Diseño UI/UX, Diseño Gráfico, Animación y 3D.',
   editorialBody:
     'Uno el diseño visual con la ingeniería de software para construir interfaces, identidades de marca, piezas en movimiento y experiencias interactivas donde la estética y el rendimiento funcionan como una sola pieza.',
   contextHeadline:
