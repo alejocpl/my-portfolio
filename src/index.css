@@ -1,0 +1,252 @@
+@import "tailwindcss";
+
+:root,
+html[data-theme="dark"] {
+  --bg: #151821;
+  --bg-rgb: 21, 24, 33;
+  --bg-elevated: #1b202d;
+  --bg-card: #191e2b;
+  --bg-glass: rgba(21, 24, 33, 0.76);
+  --fg: #ffffff;
+  --fg-rgb: 255, 255, 255;
+  --fg-muted: rgba(255, 255, 255, 0.72);
+  --fg-subtle: rgba(255, 255, 255, 0.45);
+  --accent: #155df2;
+  --accent-rgb: 21, 93, 242;
+  --accent-contrast: #ffffff;
+  --accent-soft: rgba(21, 93, 242, 0.16);
+  --accent-border: rgba(21, 93, 242, 0.42);
+  --border: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.24);
+  --shadow-card: 0 28px 80px -20px rgba(0, 0, 0, 0.65);
+  --grain-opacity: 0.04;
+  color-scheme: dark;
+}
+
+html[data-theme="light"] {
+  --bg: #ffffff;
+  --bg-rgb: 255, 255, 255;
+  --bg-elevated: #f3f6fc;
+  --bg-card: #f7f9fe;
+  --bg-glass: rgba(255, 255, 255, 0.82);
+  --fg: #151821;
+  --fg-rgb: 21, 24, 33;
+  --fg-muted: rgba(21, 24, 33, 0.76);
+  --fg-subtle: rgba(21, 24, 33, 0.5);
+  --accent: #155df2;
+  --accent-rgb: 21, 93, 242;
+  --accent-contrast: #ffffff;
+  --accent-soft: rgba(21, 93, 242, 0.1);
+  --accent-border: rgba(21, 93, 242, 0.35);
+  --border: rgba(21, 24, 33, 0.13);
+  --border-strong: rgba(21, 24, 33, 0.26);
+  --shadow-card: 0 28px 70px -24px rgba(21, 24, 33, 0.16);
+  --grain-opacity: 0.028;
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background-color: var(--bg);
+  color: var(--fg);
+  font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
+  touch-action: manipulation;
+  transition: background-color 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg);
+  color: var(--fg);
+  overflow-x: clip;
+  transition: background-color 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* Typography Families */
+.font-editorial {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  letter-spacing: -0.02em;
+}
+
+.font-sans-ui {
+  font-family: 'Libre Franklin', sans-serif;
+}
+
+/* Film grain overlay inspired by Liminal */
+.film-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 220 220' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 180px 180px;
+}
+
+/* Liminal-style Sweep-Up Fill Interactive Surface */
+.sweep-surface {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition: border-color 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sweep-surface::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  transform: translate3d(0, 102%, 0);
+  transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+  z-index: -1;
+}
+
+.sweep-surface:hover::before,
+.sweep-surface:focus-visible::before {
+  transform: translate3d(0, 0%, 0);
+}
+
+.sweep-surface:hover,
+.sweep-surface:focus-visible {
+  border-color: var(--accent);
+  color: #ffffff;
+}
+
+.sweep-surface:hover .sweep-muted,
+.sweep-surface:focus-visible .sweep-muted {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.sweep-surface:hover .sweep-chip,
+.sweep-surface:focus-visible .sweep-chip {
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  background-color: rgba(255, 255, 255, 0.14) !important;
+  color: #ffffff !important;
+}
+
+/* Dual-SVG Sliding Arrow Micro-Interaction */
+.arrow-slide {
+  position: relative;
+  display: inline-flex;
+  width: 1.25rem;
+  height: 1.25rem;
+  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+}
+
+.arrow-slide svg {
+  position: absolute;
+  transition: transform 0.42s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.arrow-slide svg:first-child {
+  transform: translate3d(0, 0, 0);
+}
+
+.arrow-slide svg:last-child {
+  transform: translate3d(-135%, 135%, 0);
+}
+
+.group:hover .arrow-slide svg:first-child,
+.sweep-surface:hover .arrow-slide svg:first-child {
+  transform: translate3d(135%, -135%, 0);
+}
+
+.group:hover .arrow-slide svg:last-child,
+.sweep-surface:hover .arrow-slide svg:last-child {
+  transform: translate3d(0, 0, 0);
+}
+
+/* Keep <main> free of transform/filter/will-change so GSAP ScrollTrigger fixed pinning stays locked to viewport */
+.smooth-stage {
+  transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.smooth-stage.drawer-open {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* Accessible Focus Ring & Keyboard Skip Link */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 95;
+  padding: 0.65rem 1.1rem;
+  border-radius: 9999px;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transform: translateY(-160%);
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+/* Tactile button press & subtle card lift */
+button:active:not(:disabled),
+a[class*="rounded-full"]:active {
+  transform: scale(0.98);
+}
+
+/* Adaptive white SVG brand logos for Dark & Light themes */
+.brand-logo-svg {
+  transition: filter 0.4s ease, opacity 0.3s ease, transform 0.4s ease;
+}
+
+html[data-theme="light"] .brand-logo-svg {
+  filter: brightness(0) saturate(100%) invert(8%) sepia(18%) saturate(1350%) hue-rotate(190deg) brightness(92%) contrast(95%);
+}
+
+/* Word split container */
+.headline-word {
+  display: inline-block;
+  will-change: transform, opacity, filter;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .headline-word {
+    filter: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .smooth-stage {
+    transition: none !important;
+  }
+}
